@@ -39,10 +39,12 @@ class LQTPConnector:
             })
         return factors
 
-    def run_factor(self, formula: str, begin: int, end: int, analyze: bool = True, warmup: int = 120) -> dict:
+    def run_factor(self, formula: str, begin: int, end: int, analyze: bool = True,
+                   warmup: int = 120, neutralize: str = "") -> dict:
         """运行因子，返回 {values: [...], ic, icir, pos_ratio, coverage}"""
+        f = self.wrap_neutralize(formula, neutralize)
         resp = self._factor_stub.RunFactor(Factor_pb2.RunFactorRequest(
-            formula=formula, begin_date=begin, end_date=end,
+            formula=f, begin_date=begin, end_date=end,
             warmup=warmup, analyze=analyze, value_return_mode=2),
             metadata=self.meta, timeout=120)
         result = {"values": [], "total_rows": resp.total_value_rows}
@@ -58,17 +60,32 @@ class LQTPConnector:
             result["values"].append({"trade_date": v.trade_date, "stocks": day_vals})
         return result
 
-    def get_factor_values(self, formula: str, trade_date: int, warmup: int = 120) -> dict:
+    def get_factor_values(self, formula: str, trade_date: int, warmup: int = 120,
+                          neutralize: str = "") -> dict:
         """单日因子值 → {symbol: value}"""
-        r = self.run_factor(formula, trade_date, trade_date, analyze=False, warmup=warmup)
+        r = self.run_factor(formula, trade_date, trade_date, analyze=False,
+                           warmup=warmup, neutralize=neutralize)
         if r["values"]:
             return r["values"][0]["stocks"]
         return {}
 
-    def scan_ic(self, formula: str, begin: int = 20240102, end: int = 20260615, warmup: int = 120) -> dict:
-        """快速IC扫描"""
+    @staticmethod
+    def wrap_neutralize(formula: str, method: str) -> str:
+        """用 LQTP 内置函数包裹中性化"""
+        if method == "size":
+            return f"size_neutralize({formula})"
+        elif method == "industry":
+            return f"industry_neutralize({formula})"
+        elif method == "both":
+            return f"neutralize({formula})"
+        return formula
+
+    def scan_ic(self, formula: str, begin: int = 20240102, end: int = 20260615,
+                warmup: int = 120, neutralize: str = "") -> dict:
+        """快速IC扫描。neutralize: '' / 'size' / 'industry' / 'both'"""
+        f = self.wrap_neutralize(formula, neutralize)
         resp = self._factor_stub.RunFactor(Factor_pb2.RunFactorRequest(
-            formula=formula, begin_date=begin, end_date=end,
+            formula=f, begin_date=begin, end_date=end,
             warmup=warmup, analyze=True, value_return_mode=0),
             metadata=self.meta, timeout=120)
         a = resp.analysis

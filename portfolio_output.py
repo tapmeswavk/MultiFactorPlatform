@@ -4,11 +4,12 @@ import pandas as pd
 class PortfolioOutput:
     @staticmethod
     def generate_daily(connector, factors: dict, weights: dict, directions: dict,
-                       builder, date: int, target_n: int = 50, warmup: int = 120) -> pd.DataFrame:
+                       builder, date: int, target_n: int = 50, warmup: int = 120,
+                       neutralize: str = "") -> pd.DataFrame:
         """单日组合输出"""
         factor_values = {}
         for fname, formula in factors.items():
-            vals = connector.get_factor_values(formula, date, warmup=warmup)
+            vals = connector.get_factor_values(formula, date, warmup=warmup, neutralize=neutralize)
             if vals:
                 direction = directions.get(fname, 1)
                 factor_values[fname] = builder.normalize(vals, direction=direction)
@@ -27,7 +28,7 @@ class PortfolioOutput:
     def generate_batch(connector, factors: dict, weights: dict, directions: dict,
                        builder, begin_date: int, end_date: int, target_n: int = 50,
                        rebalance_days: int = 1, warmup: int = 120,
-                       progress_callback=None) -> pd.DataFrame:
+                       neutralize: str = "", progress_callback=None) -> pd.DataFrame:
         """
         多日批量组合输出。
         rebalance_days: 调仓频率（交易日）。1=每日, 3=每3个交易日调一次仓。
@@ -51,7 +52,7 @@ class PortfolioOutput:
                     try:
                         df = PortfolioOutput.generate_daily(
                             connector, factors, weights, directions, builder,
-                            trade_date, target_n, warmup)
+                            trade_date, target_n, warmup, neutralize)
                         if not df.empty:
                             last_portfolio = df
                             all_rows.append(df)

@@ -9,7 +9,7 @@ class FactorScanner:
         self._conn = connector
 
     def scan_all(self, factors: list, begin: int = 20240102, end: int = 20260615,
-                 progress_callback=None) -> pd.DataFrame:
+                 neutralize: str = "", progress_callback=None) -> pd.DataFrame:
         """扫描所有因子，返回排序后的 DataFrame"""
         results = []
         total = len(factors)
@@ -19,7 +19,7 @@ class FactorScanner:
             if not formula:
                 continue
             try:
-                ic_data = self._conn.scan_ic(formula, begin, end)
+                ic_data = self._conn.scan_ic(formula, begin, end, neutralize=neutralize)
                 if ic_data:
                     results.append({
                         "name": name, "formula": formula,
