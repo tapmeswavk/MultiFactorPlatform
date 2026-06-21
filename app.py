@@ -185,13 +185,28 @@ with tab3:
     else:
         target_n = st.number_input("标的数量", 10, 200, 50, 10)
         rebalance = st.number_input("调仓频率 (交易日)", 1, 20, 1, 1, help="1=每日调仓, 3=每3天调一次")
-        neutralize_out = st.selectbox("中性化", ["无", "行业", "市值(暂不可用)", "行业+市值(暂不可用)"],
-                                       help="行业中性化可用; 市值需管理员补建表")
+
+        # 板块选择
+        st.caption("板块过滤（默认全选）")
+        c1, c2, c3, c4 = st.columns(4)
+        with c1: sel_sh = st.checkbox("沪主板 (6xx)", True)
+        with c2: sel_sz = st.checkbox("深主板 (0xx)", True)
+        with c3: sel_cy = st.checkbox("创业板 (3xx)", True)
+        with c4: sel_kc = st.checkbox("科创板 (68x)", True)
+        selected_sectors = []
+        if sel_sh: selected_sectors.append("沪主板")
+        if sel_sz: selected_sectors.append("深主板")
+        if sel_cy: selected_sectors.append("创业板")
+        if sel_kc: selected_sectors.append("科创板")
+
+        c5, c6 = st.columns(2)
+        with c5: neutralize_out = st.selectbox("中性化", ["无", "行业", "市值(暂不可用)", "行业+市值(暂不可用)"])
+        with c6: norm_method = st.selectbox("截面标准化", ["rank", "zscore"],
+                                              help="rank=百分位排名(稳健), zscore=标准化(敏感)")
+
         col1, col2 = st.columns(2)
-        with col1:
-            begin_date = st.text_input("起始日期", "20260501")
-        with col2:
-            end_date = st.text_input("结束日期", "20260531")
+        with col1: begin_date = st.text_input("起始日期", "20260501")
+        with col2: end_date = st.text_input("结束日期", "20260531")
 
         if st.button("生成组合", type="primary"):
             factors = {k: v["formula"] for k, v in st.session_state.selected_factors.items()}
@@ -205,6 +220,8 @@ with tab3:
                     int(begin_date), int(end_date), target_n,
                     rebalance_days=rebalance, warmup=120,
                     neutralize=neu_map_out[neutralize_out],
+                    normalize_method=norm_method,
+                    sectors=selected_sectors if len(selected_sectors)<4 else None,
                     progress_callback=lambda d: st.text(f"已完成 {d} 天"))
 
             if not df.empty:
