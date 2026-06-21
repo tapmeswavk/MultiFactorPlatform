@@ -2,6 +2,17 @@
 
 > 本地运行的 Streamlit 应用，直连 LQTP 因子数据库，实现因子扫描→策略构建→组合输出
 
+## 快速开始
+
+```bash
+git clone https://github.com/tapmeswavk/MultiFactorPlatform.git
+cd MultiFactorPlatform
+pip install -r requirements.txt
+streamlit run app.py
+```
+
+打开浏览器 → 填 LQTP 账号密码 → 登录 → 开始扫描因子 → 构建策略 → 输出组合 CSV → 上传 LQTP 回测。
+
 ## 架构
 
 ```
