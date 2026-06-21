@@ -37,7 +37,7 @@ class PortfolioOutput:
                 direction = directions.get(fname, 1)
                 factor_values[fname] = builder.normalize(vals, direction=direction, method=normalize_method)
 
-        selected = builder.combine(factor_values, weights, target_n)
+        selected = builder.combine(factor_values, weights, target_n, method=normalize_method)
         if not selected: return pd.DataFrame()
 
         # 板块过滤

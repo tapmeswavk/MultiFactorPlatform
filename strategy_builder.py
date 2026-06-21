@@ -27,8 +27,8 @@ class StrategyBuilder:
         return {s: float(v) for s, v in zip(symbols, ranked)}
 
     @staticmethod
-    def combine(factor_values: dict, weights: dict, target_n: int = 50) -> list:
-        """加权合成 → Top-N 股票列表"""
+    def combine(factor_values: dict, weights: dict, target_n: int = 50, method: str = "rank") -> list:
+        """加权合成 → Top-N 股票列表。method: rank=最终rank排序, zscore=保留原始合成值分布"""
         if not factor_values or not weights:
             return []
         symbols = None
@@ -46,7 +46,16 @@ class StrategyBuilder:
             vals = factor_values.get(fname, {})
             arr = np.array([vals.get(s, 0) for s in symbols])
             composite += (w / total_w) * arr
-        from scipy.stats import rankdata
-        final = rankdata(composite, method="average") / len(composite)
+        # rank 模式：最终再做一次 rank；zscore 模式：直接用原始合成值（保留分布差异）
+        if method == "zscore":
+            # 标准化合成值到 0-1
+            cmin, cmax = composite.min(), composite.max()
+            if cmax > cmin:
+                final = (composite - cmin) / (cmax - cmin)
+            else:
+                final = np.ones(len(composite)) * 0.5
+        else:
+            from scipy.stats import rankdata
+            final = rankdata(composite, method="average") / len(composite)
         idx = np.argsort(final)[-target_n:][::-1]
         return [(symbols[i], float(final[i])) for i in idx]
