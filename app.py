@@ -62,13 +62,13 @@ with tab1:
             ic_begin = st.text_input("IC 起始日", "20240102")
         with c2:
             ic_end = st.text_input("IC 结束日", "20260615")
-        neutralize_scan = st.selectbox("中性化", ["无", "市值", "行业", "行业+市值"],
-                                        help="用 LQTP 内置 neutralization 处理因子公式后再算 IC")
+        neutralize_scan = st.selectbox("中性化", ["无", "行业", "市值(暂不可用)", "行业+市值(暂不可用)"],
+                                        help="行业中性化可用(ICIR更高); 市值需管理员补建 StockCapitalDaily 表")
 
     with ctrl_col:
         if st.button("开始扫描", type="primary"):
-            neu_map = {"无": "", "市值": "size", "行业": "industry", "行业+市值": "both"}
-            neu = neu_map[neutralize_scan]
+            neu_map_scan = {"无": "", "行业": "industry", "市值(暂不可用)": "", "行业+市值(暂不可用)": ""}
+            neu = neu_map_scan[neutralize_scan]
 
             with st.spinner("正在拉取因子列表..."):
                 factors = conn.list_factors()
@@ -183,8 +183,8 @@ with tab3:
     else:
         target_n = st.number_input("标的数量", 10, 200, 50, 10)
         rebalance = st.number_input("调仓频率 (交易日)", 1, 20, 1, 1, help="1=每日调仓, 3=每3天调一次")
-        neutralize_out = st.selectbox("中性化", ["无", "市值", "行业", "行业+市值"],
-                                       help="与IC扫描时一致的中性化处理")
+        neutralize_out = st.selectbox("中性化", ["无", "行业", "市值(暂不可用)", "行业+市值(暂不可用)"],
+                                       help="行业中性化可用; 市值需管理员补建表")
         col1, col2 = st.columns(2)
         with col1:
             begin_date = st.text_input("起始日期", "20260501")
@@ -196,13 +196,13 @@ with tab3:
             weights = {k: v["weight"] for k, v in st.session_state.selected_factors.items()}
             directions = {k: v.get("direction", 1) for k, v in st.session_state.selected_factors.items()}
 
-            neu_map = {"无": "", "市值": "size", "行业": "industry", "行业+市值": "both"}
+            neu_map_out = {"无": "", "行业": "industry", "市值(暂不可用)": "", "行业+市值(暂不可用)": ""}
             with st.spinner(f"生成 {begin_date}~{end_date} 组合..."):
                 df = PortfolioOutput.generate_batch(
                     conn, factors, weights, directions, builder,
                     int(begin_date), int(end_date), target_n,
                     rebalance_days=rebalance, warmup=120,
-                    neutralize=neu_map[neutralize_out],
+                    neutralize=neu_map_out[neutralize_out],
                     progress_callback=lambda d: st.text(f"已完成 {d} 天"))
 
             if not df.empty:
