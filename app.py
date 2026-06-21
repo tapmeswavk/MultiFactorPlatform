@@ -76,10 +76,10 @@ with tab1:
                 st.success(f"获取 {len(factors)} 个因子")
 
             begin = int(ic_begin); end = int(ic_end)
-            cached = scanner.load_cache()
+            cached = scanner.load_cache(begin, end)
             if not cached.empty:
                 st.session_state.scan_df = cached
-                st.info(f"从缓存加载 {len(cached)} 条结果")
+                st.info(f"从缓存加载 {len(cached)} 条 ({ic_begin}~{ic_end})")
             else:
                 with st.spinner(f"扫描 {len(factors)} 个因子 ({ic_begin}~{ic_end}, 约需 {len(factors)*0.3:.0f}秒)..."):
                     progress_bar = st.progress(0)
@@ -88,7 +88,7 @@ with tab1:
                         progress_bar.progress(i / total)
                         status.text(f"[{i}/{total}] {name}")
                     df = scanner.scan_all(factors, begin, end, neutralize=neu, progress_callback=update)
-                    scanner.save_cache(df)
+                    scanner.save_cache(df, begin, end)
                     st.session_state.scan_df = df
                     progress_bar.empty()
                     status.empty()

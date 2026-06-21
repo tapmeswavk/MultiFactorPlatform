@@ -40,12 +40,14 @@ class FactorScanner:
             df = df.sort_values("abs_ic", ascending=False).reset_index(drop=True)
         return df
 
-    def save_cache(self, df: pd.DataFrame, filename: str = "ic_scan.csv"):
+    def save_cache(self, df: pd.DataFrame, begin: int = 0, end: int = 0):
+        filename = f"ic_scan_{begin}_{end}.csv" if begin else "ic_scan.csv"
         path = os.path.join(CACHE_DIR, filename)
         df.to_csv(path, index=False, encoding="utf-8-sig")
         return path
 
-    def load_cache(self, filename: str = "ic_scan.csv") -> pd.DataFrame:
+    def load_cache(self, begin: int = 0, end: int = 0) -> pd.DataFrame:
+        filename = f"ic_scan_{begin}_{end}.csv" if begin else "ic_scan.csv"
         path = os.path.join(CACHE_DIR, filename)
         if os.path.exists(path):
             return pd.read_csv(path)
