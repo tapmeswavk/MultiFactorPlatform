@@ -14,10 +14,12 @@ from portfolio_output import PortfolioOutput
 st.set_page_config(page_title="多因子策略平台", layout="wide")
 st.title("多因子策略平台")
 
-# ---- Session State ----
-for key in ["token", "connector", "scan_df", "selected_factors", "output_df"]:
+# ---- Session State (热重载安全) ----
+for key in ["token", "connector", "scan_df", "output_df"]:
     if key not in st.session_state:
-        st.session_state[key] = None if key != "selected_factors" else {}
+        st.session_state[key] = None
+if "selected_factors" not in st.session_state or not isinstance(st.session_state.selected_factors, dict):
+    st.session_state.selected_factors = {}
 
 # ===== SIDEBAR: Login =====
 with st.sidebar:
