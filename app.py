@@ -79,11 +79,23 @@ with tab1:
 
             begin = int(ic_begin); end = int(ic_end)
             cached = scanner.load_cache(begin, end)
-            if not cached.empty:
-                st.session_state.scan_df = cached
-                st.info(f"从缓存加载 {len(cached)} 条 ({ic_begin}~{ic_end})")
+
+            if cached.empty:
+                st.info("无缓存，全量扫描")
             else:
-                with st.spinner(f"扫描 {len(factors)} 个因子 ({ic_begin}~{ic_end}, 约需 {len(factors)*0.3:.0f}秒)..."):
+                new_count = sum(1 for f in factors if f.get("name","") not in set(cached["name"]))
+                if new_count > 0 and st.button(f"增量更新 ({new_count} 个新因子, 约{new_count*0.3:.0f}秒)", key="incr_scan"):
+                    with st.spinner(f"增量扫描 {new_count} 个新因子..."):
+                        merged = scanner.scan_new_only(factors, cached, begin, end, neutralize=neu)
+                        scanner.save_cache(merged, begin, end)
+                        st.session_state.scan_df = merged
+                    st.success(f"更新完成! {len(merged)} 个因子")
+
+                if st.button("强制全量重扫", key="force_scan"):
+                    cached = pd.DataFrame()
+
+            if cached.empty:
+                with st.spinner(f"全量扫描 {len(factors)} 个因子 ({ic_begin}~{ic_end}, 约需 {len(factors)*0.3:.0f}秒)..."):
                     progress_bar = st.progress(0)
                     status = st.empty()
                     def update(i, total, name):
@@ -95,6 +107,9 @@ with tab1:
                     progress_bar.empty()
                     status.empty()
                 st.success(f"完成! {len(df)} 个因子有效")
+            elif st.session_state.scan_df is None:
+                st.session_state.scan_df = cached
+                st.success(f"缓存加载 {len(cached)} 条 ({ic_begin}~{ic_end})")
             st.session_state.scan_neutralize = neu  # remember for strategy
 
     # Results table + selection

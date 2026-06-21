@@ -46,9 +46,31 @@ class FactorScanner:
         df.to_csv(path, index=False, encoding="utf-8-sig")
         return path
 
-    def load_cache(self, begin: int = 0, end: int = 0) -> pd.DataFrame:
+    def load_cache(self, begin: int = 0, end: int = 0, expected_count: int = 0) -> pd.DataFrame:
         filename = f"ic_scan_{begin}_{end}.csv" if begin else "ic_scan.csv"
         path = os.path.join(CACHE_DIR, filename)
         if os.path.exists(path):
-            return pd.read_csv(path)
+            df = pd.read_csv(path)
+            return df
         return pd.DataFrame()
+
+    def scan_new_only(self, all_factors: list, cached_df: pd.DataFrame,
+                      begin: int, end: int, neutralize: str = "",
+                      progress_callback=None) -> pd.DataFrame:
+        """增量扫描：只扫缓存中没有的新因子，合并到旧结果中"""
+        if cached_df.empty:
+            return pd.DataFrame()
+
+        cached_names = set(cached_df["name"])
+        new_factors = [f for f in all_factors if f.get("name", "") not in cached_names]
+
+        if not new_factors:
+            return cached_df
+
+        new_results = self.scan_all(new_factors, begin, end, neutralize, progress_callback)
+        if new_results.empty:
+            return cached_df
+
+        merged = pd.concat([cached_df, new_results], ignore_index=True)
+        merged = merged.sort_values("abs_ic", ascending=False).reset_index(drop=True)
+        return merged
