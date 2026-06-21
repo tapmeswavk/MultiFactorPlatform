@@ -106,7 +106,15 @@ with tab1:
         center_col, right_col = st.columns([3, 1])
 
         with center_col:
-            # Build table rows with selection column
+            # Column header
+            h1, h2, h3, h4, h5, h6 = st.columns([3, 1, 1, 1, 1, 0.8])
+            with h1: st.caption("因子名称")
+            with h2: st.caption("IC")
+            with h3: st.caption("ICIR")
+            with h4: st.caption("有效%")
+            with h5: st.caption("覆盖率")
+            with h6: st.caption("选择")
+
             for i, (_, row) in enumerate(df_filtered.iterrows()):
                 name = row["name"]
                 uid = row.get("definition_id", str(i))
